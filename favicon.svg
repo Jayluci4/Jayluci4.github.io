@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Compute and Clusters">
+  <rect width="64" height="64" rx="12" fill="#0b0d0e"/>
+  <path d="M16 18h32v28H16z" fill="#111718" stroke="#82d173" stroke-width="3"/>
+  <path d="M24 26h16M24 34h10" stroke="#62c7d0" stroke-width="4" stroke-linecap="round"/>
+  <path d="M12 26H6M12 38H6M58 26h-6M58 38h-6M24 12V6M40 12V6M24 58v-6M40 58v-6" stroke="#d8aa54" stroke-width="3" stroke-linecap="round"/>
+</svg>

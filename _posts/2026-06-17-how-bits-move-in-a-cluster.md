@@ -1,4 +1,9 @@
-# How Bits Move in a Cluster
+---
+layout: post
+title: "How Bits Move in a Cluster"
+date: 2026-06-17
+author: "Jayant Lohia"
+---
 
 Three companies build the hardware that moves bits through AI clusters: NVIDIA, AMD, and Google. Each made fundamentally different bets on how chips should talk to each other.
 

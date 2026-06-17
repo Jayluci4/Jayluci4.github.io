@@ -1,0 +1,24 @@
+---
+---
+@import "{{ site.theme }}";
+
+body {
+  /* Minimal dark dot grid simulating a chip matrix */
+  background-color: #0f0f0f;
+  background-image: radial-gradient(#333 1px, transparent 1px);
+  background-size: 24px 24px;
+  font-family: "Courier New", Courier, monospace;
+}
+
+/* Override container to ensure text remains readable over the grid */
+.container {
+  background-color: rgba(15, 15, 15, 0.85);
+  padding: 2rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+/* Terminal green headers for the retro feel */
+h1, h2, h3, h4 {
+  color: #4af626;
+}

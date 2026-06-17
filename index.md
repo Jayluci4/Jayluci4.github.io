@@ -2,9 +2,9 @@
 layout: default
 ---
 
-# Jayluci4.github.io
+Notes and analysis on low-level AI infrastructure, kernel optimization, and bare-metal performance.
 
-## Recent Posts
+### System Logs
 <ul>
   {% for post in site.posts %}
     <li>

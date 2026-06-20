@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "How Bits Move in a Cluster"
-date: 2026-06-17
+date: 2026-06-06
 author: "Jayant Lohia"
 ---
 

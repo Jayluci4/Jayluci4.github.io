@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Who Really Builds an XPU?"
-date: 2026-06-17
+date: 2026-06-20
 author: "Jayant Lohia"
 description: "An AI accelerator is not built by one company. It is built by the slowest qualified layer in the supply chain."
 tags: [ai-infrastructure, supply-chain, hardware]

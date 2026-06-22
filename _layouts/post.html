@@ -2,16 +2,31 @@
 layout: default
 ---
 
+{% assign word_count = content | strip_html | number_of_words %}
+{% assign reading_minutes = word_count | plus: 199 | divided_by: 200 %}
+{% if reading_minutes < 1 %}
+  {% assign reading_minutes = 1 %}
+{% endif %}
+
 <article class="post">
   <header class="post-header">
-    <p class="post-date">
+    <div class="post-meta" aria-label="Post details">
       <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %-d, %Y" }}</time>
-    </p>
+      <span>{{ reading_minutes }} minute read</span>
+    </div>
     <h1>{{ page.title }}</h1>
-    <p class="post-author">By {{ page.author | default: site.author }}</p>
+    <div class="post-byline">
+      <p class="post-author">By {{ page.author | default: site.author }}</p>
+      <div class="read-control">
+        <button class="read-aloud-button" type="button" data-read-aloud aria-pressed="false" aria-label="Read this post aloud">
+          <span data-read-label>Listen</span>
+        </button>
+        <span class="read-status" data-read-status aria-live="polite"></span>
+      </div>
+    </div>
   </header>
 
-  <div class="post-content">
+  <div class="post-content" data-readable-post>
     {{ content }}
   </div>
 

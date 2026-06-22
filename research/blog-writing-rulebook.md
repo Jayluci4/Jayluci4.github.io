@@ -31,6 +31,18 @@ The reader should know the question before they see the facts.
 5. Repeat the same test at every layer: what is the bottleneck, who controls it, and what happens when it slips?
 6. End with the simplest sentence that could only have come after the whole essay.
 
+## Feynman-Karpathy Structure
+
+Use this when a technical post needs to feel like a human story, not a cleaned-up lab report.
+
+1. Cold open: one paragraph that states the paradigm shift or the core problem. No throat clearing.
+2. Old way / pain: explain what the reader probably believes, and where that model breaks.
+3. Core mechanism: use numbered sections. Each section should state the concept, explain the physical mechanism, then explain why it matters.
+4. Reality check: say where the idea breaks, what trade-off it accepts, and what gets brittle.
+5. Bold TL;DR: end with the physical truth of the post, not a fluffy conclusion.
+
+Code, diagrams, or concrete pipelines should appear where prose would otherwise become vibes.
+
 ## Voice
 
 Write like Feynman and Karpathy are sitting behind you asking:
@@ -42,6 +54,11 @@ Write like Feynman and Karpathy are sitting behind you asking:
 
 Rules:
 
+- Use confident humility: "I think", "my read", "the better model is", when the world is shifting.
+- Ground abstractions in physical reality. If you say compiler, say kernel, HBM, queues, tensor units, host sync, or collectives.
+- Show the friction. A post becomes a story when something breaks: a pipeline bubble, a bad collective, a package yield issue, a brittle kernel, a cooling constraint.
+- Use parentheticals for human asides, but only when they add texture or precision.
+- Vary rhythm. A long technical sentence can be followed by a short one. Like this.
 - Use concrete nouns: HBM, interposer, NIC, substation, compiler, kernel, rack.
 - Prefer short sentences when making a claim.
 - Use longer sentences only when connecting ideas.
@@ -144,6 +161,9 @@ Read the draft once for each question:
 5. Which paragraph would an expert skip?
 6. Which paragraph would a smart beginner not understand?
 7. Can the final sentence survive alone?
+8. Where is the blood on the keyboard?
+9. Did the draft explain why the hard thing is physically hard?
+10. Did it include the software path if the hardware only becomes useful through software?
 
 ## Sources Behind This Rulebook
 

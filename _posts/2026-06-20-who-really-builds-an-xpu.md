@@ -172,6 +172,53 @@ This layer fails quietly. You do not always get a crash. You get 42% utilization
 
 So yes: kernel writers, compiler engineers, framework maintainers, library teams, profiler authors, and distributed-runtime people are part of who builds an XPU.
 
+### A Small Ugly Example
+
+Here is the kind of software failure I mean. The Python looks innocent:
+
+```python
+# looks like one operation in your head
+y = torch.relu(x + bias)
+```
+
+If capture/fusion works, this is boring. Load `x`, load `bias`, add, clamp at zero, store `y`. One pass over memory.
+
+If fusion misses, the machine may do something closer to this:
+
+```text
+# kernel 1
+global_load_dword   v0, ...
+global_load_dword   v1, ...
+v_add_f32           v2, v0, v1
+global_store_dword  tmp, v2
+
+# kernel 2
+global_load_dword   v3, tmp
+v_max_f32           v4, v3, 0
+global_store_dword  y, v4
+```
+
+The bad part is not that `v_add_f32` or `v_max_f32` is slow. The bad part is the extra trip through HBM and the kernel boundary. You wrote one expression. The device saw two launches, a temporary tensor, a store, a reload, and a bubble where useful work could have been happening.
+
+In a hand-tuned HIP path, you try very hard to keep the value in registers:
+
+```cpp
+// sketch, not a benchmark claim
+float4 xv = *reinterpret_cast<const float4*>(x + i);
+float4 bv = *reinterpret_cast<const float4*>(bias + i);
+
+xv.x = fmaxf(xv.x + bv.x, 0.0f);
+xv.y = fmaxf(xv.y + bv.y, 0.0f);
+xv.z = fmaxf(xv.z + bv.z, 0.0f);
+xv.w = fmaxf(xv.w + bv.w, 0.0f);
+
+*reinterpret_cast<float4*>(y + i) = xv;
+```
+
+On CDNA, the disassembly you are hoping to see is the boring one: wide/coalesced loads, vector ALU, wide store, no unnecessary round trip through memory. In real low-level work you may go even lower, using AMDGPU intrinsics or inline assembly to force a particular load/store shape (for example a `global_load_dwordx4`-style vector load) when the compiler refuses to give it to you.
+
+That is the micro-version of the whole supply-chain argument. The XPU can be perfect on paper, but if one compiler decision inserts an extra memory trip in the hot path, the expensive package is now waiting on software.
+
 ## 5. EDA and IP Buy Back Calendar
 
 Before the chip is a chip, it is an argument with physics.
@@ -208,7 +255,7 @@ Then comes packaging, which sounds much calmer than it is.
 
 In a CoWoS-style package, logic and HBM sit close enough that the accelerator can move huge amounts of data without leaving the package. The price is mechanical ugliness. Silicon, organic substrate, solder bumps, underfill, heat spreader, cold plate: these materials expand differently. The package heats, cools, bows, and gets clamped into a server. Signals still have to arrive cleanly. Power still has to arrive without too much noise. HBM still has to stay inside its thermal limits.
 
-That is the part hidden by the word "advanced." It is not advanced like a shiny feature. It is advanced like a bridge that cannot crack when traffic and weather change at the same time.
+That is the part hidden by the word "advanced." It is not advanced like a shiny feature. It is advanced like a bridge that cannot crack when traffic and weather change at the same time. (If you have ever seen an organic substrate warp under thermal load, you understand why packaging people do not sleep normally.)
 
 The chip is born at tapeout. The accelerator becomes real at package-out.
 
@@ -250,11 +297,9 @@ There is no free layer. A custom kernel can be fast and brittle. An open interco
 
 Every company is choosing where to accept pain.
 
-## My Read
+The bottleneck will keep moving. HBM4 one quarter. CoWoS-L or SoIC the next. Substrates after that. Then 1.6T optics, CDUs, power shelves, transformers, deployment labor, or grid interconnects.
 
-The next bottleneck will move around. HBM4 one quarter. CoWoS-L or SoIC the next. Substrates after that. Then 1.6T optics, CDUs, power shelves, transformers, deployment labor, or grid interconnects.
-
-Custom silicon keeps growing where the buyer owns the workload. Ethernet keeps gaining where buyers want replaceability. Proprietary scale-up fabrics stay strong where the system owner can keep a tight fast domain and charge for the integrated path.
+Custom silicon grows where the buyer owns the workload. Ethernet gains where buyers want replaceability. Proprietary scale-up fabrics stay strong where the system owner can keep a tight fast domain and charge for the integrated path.
 
 The package becomes as important as the die. The question is not only "how fast is the chip?" It is "how much memory and bandwidth can the package sustain, and how many good ones can be built?"
 
@@ -265,7 +310,7 @@ Power is the cleanest constraint because it is hard to hand-wave. Either the sit
 - CUDA as early speculative software platform: [NVIDIA CUDA programming guide](https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/introduction.html), [NVIDIA CUDA platform](https://developer.nvidia.com/cuda)
 - Jensen Huang on downstream demand and supply-chain alignment: [Dwarkesh interview](https://www.dwarkesh.com/p/jensen-huang)
 - Demand signals: [OpenAI and Broadcom 10 GW collaboration](https://investors.broadcom.com/news-releases/news-release-details/openai-and-broadcom-announce-strategic-collaboration-deploy-10), [Meta 2026 capex guidance](https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Fourth-Quarter-and-Full-Year-2025-Results/default.aspx)
-- Software paths: [NVIDIA NCCL](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/overview.html), [AMD RCCL](https://rocm.docs.amd.com/projects/rccl/en/latest/what-is-rccl.html), [Google Cloud TPU and XLA](https://docs.cloud.google.com/tpu/docs/intro-to-tpu), [AWS Neuron](https://awsdocs-neuron.readthedocs-hosted.com/)
+- Software paths: [NVIDIA NCCL](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/overview.html), [AMD RCCL](https://rocm.docs.amd.com/projects/rccl/en/latest/what-is-rccl.html), [ROCm compiler reference](https://rocm.docs.amd.com/projects/llvm-project/en/latest/reference/rocmcc.html), [Clang AMDGPU builtins](https://clang.llvm.org/docs/AMDGPUBuiltinReference.html), [Google Cloud TPU and XLA](https://docs.cloud.google.com/tpu/docs/intro-to-tpu), [AWS Neuron](https://awsdocs-neuron.readthedocs-hosted.com/)
 - EDA and IP: [Cadence Q1 2026](https://investor.cadence.com/news/news-details/2026/Cadence-Reports-First-Quarter-2026-Financial-Results/default.aspx), [Synopsys 2025 10-K](https://www.sec.gov/Archives/edgar/data/883241/000088324125000028/snps-20251031.htm), [Arm Neoverse CSS](https://www.arm.com/products/cloud-datacenter/neoverse-compute-subsystems)
 - Foundry, yield, and equipment: [TSMC 2025 annual report](https://investor.tsmc.com/static/annualReports/2025/english/index.html), [ASML 2025 financials](https://www.asml.com/en/investors/annual-report/2025/financials), [KLA defect inspection](https://www.kla.com/products/chip-manufacturing/defect-inspection-review)
 - HBM and packaging: [Micron HBM4](https://investors.micron.com/news-releases/news-release-details/micron-high-volume-production-hbm4-designed-nvidia-vera-rubin), [SK hynix HBM4](https://news.skhynix.com/sk-hynix-completes-worlds-first-hbm4-development-and-readies-mass-production/), [Samsung and AMD HBM4](https://news.samsung.com/global/samsung-and-amd-expand-strategic-collaboration-on-next-generation-ai-memory-solutions), [TSMC CoWoS](https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/cowos.htm), [Intel advanced packaging](https://www.intel.com/content/www/us/en/foundry/packaging.html), [Ajinomoto ABF](https://www.ajinomoto.com/innovation/our_innovation/buildupfilm)
